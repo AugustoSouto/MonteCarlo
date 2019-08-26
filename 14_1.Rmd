@@ -1,0 +1,259 @@
+---
+title: "Ejercicio 14.1"
+author: "Augusto Souto & Federico Molina"
+date: "29 de mayo de 2019"
+output:
+  pdf_document:
+    toc: yes
+    fig_caption: yes
+  html_document:
+    df_print: paged
+    toc: yes
+  word_document:
+    toc: yes
+keep_tex: yes
+lang: es
+geometry: margin=2cm
+fontsize: 10pt
+urlcolor: blue
+numbersections: yes 
+header-includes: 
+  - \usepackage{amsmath}
+  - \usepackage{pgfplots}
+  - \usepackage{pgf}
+  - \usepackage{float}
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  results="hide",
+	message = FALSE,
+	warning = FALSE,
+	error=FALSE,
+	fig.pos="H",
+	options(xtable.comment = FALSE)
+)
+```
+
+```{r, echo=FALSE}
+library(magrittr)
+
+```
+
+\newpage
+
+#Ejercicio 14:
+
+Partiendo de uno de los códigos elaborados para
+resolver el ejercicio 6.2, utilizar el método de muestreo estratificado para calcular la integral de la función $x_{1}x_{2}^{2}x_{3}^{3}x_{4}^{4}x_{5}^{5}$
+sobre el hipercubo $J^{m}$ de
+dimensión $m = 5$ en base a $10^{6}$
+iteraciones. Calcular media, desviación
+estándar y un intervalo de confianza de nivel 95%.
+Comparar con los resultados obtenidos con el código del ejercicio 6.2.
+
+\textit{Sugerencia:} definir 5 estratos, en función del valor de $x_{5}$, tomando los siguientes intervalos:
+$[0, 0.75)$, $[0.75, 0.85)$, $[0.85, 0.90)$, $[0.90, 0.95)$, $[0.95, 1]$. Hacer dos
+experimentos, uno tomando $\frac{10^{6}}{5}$ iteraciones en cada estrato, otro tomando una cantidad de iteraciones proporcional a la probabilidad de cada estrato.
+
+#Resolución
+
+En primer lugar, se simulan los puntos del hipercubo en cada uno de los estratos mediante una función, a la que llamaremos sorteo. Dicha función recibe como parámetros de entrada un vector con la cantidad de puntos a simular en cada estrato y una semilla que permite reproducir los resultados. Por otra parte, la función devuelve una lista con 5 matrices, las cuales representan los puntos simulados en cada estrato.
+
+```{r}
+sorteo<-function(n, semilla){
+  
+set.seed(semilla)  
+
+x_1_1<-runif(n[1], 0, 1) %>% as.matrix()
+x_2_1<-runif(n[1], 0, 1) %>% as.matrix()
+x_3_1<-runif(n[1], 0, 1) %>% as.matrix()
+x_4_1<-runif(n[1], 0, 1) %>% as.matrix()
+x_5_1<-runif(n[1], 0, 0.75) %>% as.matrix()
+
+estrato_1<-cbind(x_1_1,x_2_1, x_3_1, x_4_1, x_5_1)
+
+
+#zona 2
+x_1_2<-runif(n[2], 0, 1) %>% as.matrix()
+x_2_2<-runif(n[2], 0, 1) %>% as.matrix()
+x_3_2<-runif(n[2], 0, 1) %>% as.matrix()
+x_4_2<-runif(n[2], 0, 1) %>% as.matrix()
+x_5_2<-runif(n[2], 0.75, 0.85) %>% as.matrix()
+
+estrato_2<-cbind(x_1_2,x_2_2, x_3_2, x_4_2, x_5_2)
+
+#zona 3
+x_1_3<-runif(n[3], 0, 1) %>% as.matrix()
+x_2_3<-runif(n[3], 0, 1) %>% as.matrix()
+x_3_3<-runif(n[3], 0, 1) %>% as.matrix()
+x_4_3<-runif(n[3], 0, 1) %>% as.matrix()
+x_5_3<-runif(n[3], 0.85, 0.90) %>% as.matrix()
+
+estrato_3<-cbind(x_1_3,x_2_3, x_3_3, x_4_3, x_5_3)
+
+#zona 4
+x_1_4<-runif(n[4], 0, 1) %>% as.matrix()
+x_2_4<-runif(n[4], 0, 1) %>% as.matrix()
+x_3_4<-runif(n[4], 0, 1) %>% as.matrix()
+x_4_4<-runif(n[4], 0, 1) %>% as.matrix()
+x_5_4<-runif(n[4], 0.90, 0.95) %>% as.matrix()
+
+estrato_4<-cbind(x_1_4,x_2_4, x_3_4, x_4_4, x_5_4)
+
+#zona 5
+x_1_5<-runif(n[5], 0, 1) %>% as.matrix()
+x_2_5<-runif(n[5], 0, 1) %>% as.matrix()
+x_3_5<-runif(n[5], 0, 1) %>% as.matrix()
+x_4_5<-runif(n[5], 0, 1) %>% as.matrix()
+x_5_5<-runif(n[5], 0.95, 1)    %>% as.matrix()
+
+estrato_5<-cbind(x_1_5,x_2_5, x_3_5, x_4_5, x_5_5)
+
+return(list(estrato_1, estrato_2, estrato_3, estrato_4, estrato_5))
+
+}
+  
+```
+
+Por otro lado, se utiliza primero un numero de iteraciones de $n_{i}=\frac{10^{6}}{6}$ para todos los estratos para luego probar con $n_{i}=p_{i}10^{6}$ donde $p_{i}$ es la masa de probabilidad que acumula cada estrato del hipercubo. Por lo tanto, los vectores de entrada en la función sorteo son $$n=\begin{pmatrix}
+    \frac{10^{6}}{6} & \frac{10^{6}}{6} & \frac{10^{6}}{6} &
+    \frac{10^{6}}{6} & \frac{10^{6}}{6} & \frac{10^{6}}{6}
+\end{pmatrix}$$ y  $$n=\begin{pmatrix}
+    p_{1}10^{6}, & p_{2}10^{6}, & p_{3}10^{6}, &
+    p_{4}10^{6}, & p_{5}10^{6}, & p_{6}10^{6}
+\end{pmatrix}$$
+
+Los sorteos se hacen con los siguientes comandos:
+```{r}
+#DEFINO LOS PARAMETROS DE ENTRADA DE LA FUNCION PARA EL CASO N PROPORCIONAL AL ESTRATO
+n<-10^6
+probs<-c(0.75,0.10, 0.05, 0.05, 0.05, 0.05)
+n_1<-probs[1]*n
+n_2<-probs[2]*n
+n_3<-probs[3]*n
+n_4<-probs[4]*n
+n_5<-probs[5]*n
+
+n_ponderado<-c(n_1, n_2, n_3,n_4, n_5)
+
+#HAGO EL SORTEO DE PUNTOS EN EL HIPERCUBO
+matriz_1<-sorteo(n=n_ponderado, semilla=10)
+
+#DEFINO N PARA EL CASO NO PROPORCIONAL 
+n_equiprobable<-rep(10^6,5) %>% c()
+
+#HAGO EL SORTEO DE PUNTOS EN EL HIPERCUBO
+matriz_2<-sorteo(n=n_equiprobable, semilla=10)
+
+```
+
+Como se observa, primero se simularon los puntos en el caso donde el numero de iteraciones es proporcional a la masa de probabilidad del estrato y luego se simularon los puntos en el caso donde el numero de iteraciones es igual para todos los estratos del hipercubo.
+
+Luego, usamos la función que nos permite computar el valor estimado de la integral, la varianza muestral y los intervalos de confianza. Esta función recibe como parámetros de entrada  el nivel de confianza, la matriz con los puntos del estrato y el numero de puntos a tomar para calcular las estimaciones.
+
+```{r}
+estimacion<-function( alfa=0.05, matriz, n){
+  
+   valor<-vector("numeric", length=n)
+  #valores que toma la funci?n en los puntos sorteados dentro de la region#
+  
+  for (i in 1:n) {
+    valor[i]=(matriz[i,1]*matriz[i,2]^2*matriz[i,3]^3*matriz[i,4]^4*matriz[i,5]^5)
+  }
+  
+  s<-vector("numeric", length=n)
+  t<-vector("numeric", length=n)
+  
+  t[1]=0
+  s[1]=valor[1]
+  
+  for (i in 2:n) {
+    t[i]<-t[i-1]+(1-(1/i))*(valor[i] -( s[i-1] / (i-1)) )^2 
+    s[i]<-s[i-1]+valor[i]
+  }
+  
+  int<-s[n]/n
+  var_int<-t[n]/(n-1)
+  var_est<-var_int/n
+  inf<-int-qnorm(1-alfa/2)*(var_int/n)^(1/2)
+  sup<-int+qnorm(1-alfa/2)*(var_int/n)^(1/2)
+  
+  return(c(int, var_int, inf, sup))
+}  
+
+```
+
+Por lo tanto, combinando las estimaciones de los estratos podemos obtener las estimaciones del método de mustreo estratificado. Para llevar a cabo esto, definimos la función "estimación hipercubo", la misma toma como parámetros de entrada  al vector de probabilidades asignadas a cada estrato (construido a partir de la masa de probabilidad de cada estrato), a la matriz de puntos que se sorteo anteriormente y al vector que define el número de iteraciones usadas en cada estrato. 
+
+```{r}
+estimacion_hipercubo<-function(probs, matriz, n){
+for (i in 1:5) {
+  if(i==1){
+  int_tot<-probs[i]*estimacion(matriz = matriz[[i]], n=n[i])[1]
+  var_int<-((probs[i]^2)*(estimacion(matriz =  matriz[[i]], n=n[i])[2])^2)/n[i]
+  }else{
+  int_tot=int_tot+probs[i]*estimacion(matriz =  matriz[[i]], n=n[i])[1]
+  var_int=var_int+((probs[i]^2)*(estimacion(matriz =  matriz[[i]], n=n[i])[2])^2)/n[i]
+  }
+  
+  }
+  return(c(int_tot, var_int))
+}  
+
+```
+Como se ve, la función devuelve la estimación de la integral y la varianza muestral. Utilizando la última, se calculan los intervalos de confianza al 95%.
+
+```{r, results='markup'}
+#ESTIMACIONES PARA EL CASO N PROPORCIONAL
+caso_1<-estimacion_hipercubo( matriz=matriz_1, probs=probs, n=n_ponderado)
+
+inf_1<-caso_1[1]-qnorm(1-0.05/2)*(caso_1[2]/n)^(1/2)
+sup_1<-caso_1[1]+qnorm(1-0.05/2)*(caso_1[2]/n)^(1/2)
+
+#ESTIMACIONES PARA EL CASO N NO PROPORCIONAL
+caso_2<-estimacion_hipercubo( matriz=matriz_2, probs=probs, n=n_equiprobable)
+
+inf_2<-caso_2[1]-qnorm(1-0.05/2)*(caso_2[2]/n)^(1/2)
+sup_2<-caso_2[1]+qnorm(1-0.05/2)*(caso_2[2]/n)^(1/2)
+
+
+```
+
+Para el caso con "n" proporcional, se estimó integral con un valor de `r caso_1[1] %>% format(, nsmall=10) ` y a la  varianza muestral en $`r format(caso_1[2], scientific=TRUE) `$. Por otro lado, el intervalo de confianza està definido entre `r inf_1 %>% format(, nsmall=10)` y `r sup_1 %>% format(, nsmall=10)`.
+
+Para el caso no proporcional, la estimación de la integral  es de `r caso_2[1] %>% format(, nsmall=10)` y la  varianza muestral estimada es 
+$`r format(caso_2[2], scientific=TRUE)`$. El intervalo de confianza està definido entre `r inf_2 %>% format(, nsmall=10)` y `r sup_2 %>% format(, nsmall=10)`. 
+
+```{r, echo=FALSE}
+  x_1<-runif(n, 0, 1) %>% as.matrix()
+  x_2<-runif(n, 0, 1) %>% as.matrix()
+  x_3<-runif(n, 0, 1) %>% as.matrix()
+  x_4<-runif(n, 0, 1) %>% as.matrix()
+  x_5<-runif(n, 0, 1) %>% as.matrix()
+  
+  coor<-cbind(x_1, x_2,x_3,x_4,x_5)
+  seis_dos<- estimacion(matriz=coor, n=10^6)
+  dif1<-seis_dos[1]-1/720
+  dif2<-caso_1[1]-1/720
+  dif3<-caso_2[1]-1/720
+
+
+```
+
+
+Estos resultados contrastan con los obtenidos mediante el calculo del ejercicio 6.2, donde la integral estimada es de `r seis_dos[1] %>% format(, nsmall=10)`, con varianza muestral de  $`r abs(seis_dos[2]) %>% formatC(,digits=10 )`$ e intervalo ubicado entre `r seis_dos[3] %>% format(, nsmall=10)` y `r seis_dos[4] %>% format(, nsmall=10)`.
+
+Como se observa, las varianzas se reducen de forma significativa tras aplicar el método de estratificación. El caso en el que se logra reducir más la varianza fue el que asigno las iteraciones de manera no proporcional.
+
+Por otro lado, mientras la distancia del estimador del ejercicio anterior con el valor analítico de la integral fue de $`r format(dif1, scientific=TRUE)`$, en el caso del método con n proporcional la distancia fue de $`r format(abs(dif2), scientific=TRUE)`$ y en el caso no proporcional de $`r format(abs(dif3), scientific=TRUE)`$. Por lo tanto, se reduce la varianza significativamente pero aumenta el sesgo del estimador.
+
+
+
+#Datos Sobre la Implementación del Ejercicio
+
+Se utilizó el lenguaje R y el equipo utilizado fue un Intel core i3 M380, con 4 gb de memoria y 2.53 GHz.
+
+
+

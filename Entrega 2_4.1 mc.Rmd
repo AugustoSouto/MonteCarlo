@@ -1,0 +1,99 @@
+---
+title: 'Sesion 2: Ejercicio 4.1'
+author: "Augusto Souto-Perez"
+date: "Miercoles 27 de Marzo"
+output:
+  pdf_document:
+    toc: yes
+    fig_caption: yes
+  html_document:
+    df_print: paged
+    toc: yes
+  word_document:
+    toc: yes
+keep_tex: yes
+lang: es
+geometry: margin=2cm
+fontsize: 10pt
+urlcolor: blue
+numbersections: yes 
+header-includes: 
+  - \usepackage{tikz}
+  - \usepackage{pgfplots}
+  - \usepackage{pgf}
+  - \usepackage{float}
+---
+
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  results="hide",
+	message = FALSE,
+	warning = FALSE,
+	error=FALSE,
+	fig.pos="H",
+	options(xtable.comment = FALSE)
+)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Entrega 2 - Ejercicio 4.1:
+
++ 1. Comparar y discutir la dependencia de los criterios de peor caso $n_{c}$,
+     $n_{N}$, $n_{H}$ frente a los parámetros $\epsilon$ y $\delta$
++ 2. Calcular $n_{c}$, $n_{N}$ y $n_{H}$ para $\epsilon$ = 0.01, $\delta$ = 0.001, $\delta$= 0.01 y $\delta$= 0.05
+
+#Parte 1
+
+Como sabemos, los tamaños de muestra son los siguientes:
+
+
++ $n_{h}=\frac{2\log(2/\delta)}{4\epsilon^{2}}$
+
+
++ $n_{n}=\Big[\frac{\phi^{-1}(1-\frac{\delta}{2})}{2\epsilon}\Big]^{2}$
+
+
++ $n_{c}=\frac{1}{4\delta \epsilon^{2}}$
+
+
+
+De estas ecuaciones podemos observar que en el caso de $n_{c}$, el tamaño aumenta linealmente con el nivel de confianza $\delta$, que en el caso de $n_{h}$ el tamaño de muestra aumenta de manera logaritmica y que $n_{n}$ crece con $\delta$ a una tasa aún menor que $n_{h}$ dado que la misma crece de acuerdo a la inversa de la función cuantil de la distribución normal.  
+
+Por otra parte, si se analiza la reducción en el tamaño muestral cuando aumenta el error, se observa que las tres formulas decrecen de manera cuadratica con un aumento en la tolerancia del error. No obstante, para $n_{c}$ el coeficiente de decrecimiento es de $4\delta$, para $n_{h}$ el mismo es de 0.5 y para $n_{n}$ el coeficiente es 4. Ergo, como el orden de dichos coeficientes es $4>0,5>4\delta \Leftrightarrow	\delta<0,125$ o  $4>4\delta>0,5  \Leftrightarrow	\delta>0,125$, podemos concluir que la formula $n_{n}$ será la que requerirá una menor muestra, mientras que le siguen las fórmulas de $n_{c}$ o $n_{h}$ dependiendo del nivel de confianza que se utilice.
+
+
+
+# Parte 2
+A continuación, se muestra el código utilizado para el calculo de los tamaños de muestra minimos para cada caso de $\delta$.
+
+```{r}
+if (!require('magrittr')) install.packages('magrittr')
+epsilon<-0.01
+delta<-c(0.001, 0.01, 0.05) %>% as.vector()
+
+n_c<-vector("numeric", length = 3)
+n_n<-vector("numeric", length = 3)
+n_h<-vector("numeric", length = 3)
+
+for (k in 1:length(delta)) {
+  
+n_h[k]<-(2*log(2/delta[k]))/(4*(epsilon^2))
+
+n_c[k]<- 1/((4*delta[k])*(epsilon^2))
+
+n_n[k]<-(qnorm(1-delta[k]/2)/(2*epsilon))^2
+}
+
+tabla<-rbind(n_c,n_n,n_h)
+colnames(tabla)<-c("Delta_0.001", "Delta_0.01", "Delta_0.05")
+
+```
+
+Por último, la siguiente tabla  muestra el numero de observaciones requeridas para un $\epsilon$ igual a 0.01 y $\delta$ igual a 0.001, 0.01 y 0.05.
+
+```{r, results="markup"}
+kableExtra::kable(tabla)
+```
+
