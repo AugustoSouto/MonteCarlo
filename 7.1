@@ -1,0 +1,76 @@
+---
+title: "Ejercicio 7.1"
+author: "Augusto Souto"
+date: "24 de abril de 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  results="hide",
+	message = FALSE,
+	warning = FALSE,
+	error=FALSE,
+	fig.pos="H",
+	options(xtable.comment = FALSE)
+)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Descripción General del Problema
+
+Problema: para diseñar un Sistema Nacional de Areas Protegidas, uno de 
+los modelos empleados tiene en cuenta por un lado un conjunto
+$E = {1, . . . , e}$  de especies que se desea preservar, y por otra parte un
+conjunto $Z$ de zonas donde es posible establecer una reserva. La relación
+entre ambos conjuntos está dada por una matriz $P = ((p_{ij}))$, con $i???Z $
+y $j???E $, tal que $z_{ij}= 1 $ s  en la zona $i$ se ha observado la presencia de
+la especie $j$. 
+
+Es interesante elegir un conjunto de $M$ zonas, tales que todas las especies
+estén representadas en al menos una zona. La determinación del menor $M$
+que hace posible esta propiedad es un problema de "set covering"
+(NP-difícil), que escapa el alcance de este curso.
+
+Suponiendo que el valor de $M$ ya fue elegido, un segundo nivel es ver
+cuantas formas distintas hay de elegir este conjunto de zonas.
+
+Para esto, es posible aplicar el método Monte Carlo para, dado el cardinal
+de $E$, el cardinal de $Z$, la matriz $P = ((p_{ij}))$, y un valor de $M$
+predeterminado, estimar cuántas combinaciones de $M$ zonas distintas
+cumplen la propiedad requerida (representar todas las especies).
+
+Se debe recibir en entrada el número de replicaciones a realizar, y el nivel
+de confianza; en salida, se debe dar la estimación del número de
+combinaciones $NC(M)$, así como la desviación estándar y un intervalo de
+confianza (del nivel especificado) calculado en base al criterio de
+Agresti-Coull.
+
+##Parte A
+
+Escribir un programa para hacer el cálculo previamente
+descrito. Entregar seudocódigo y código.
+
+Comentario: para el muestreo uniforme de los subconjuntos de $Z$, se
+debe hacer un "muestreo sin remplazos´´de las distintas zonas. Es
+posible hacerlo sorteando siempre números uniformes entre $1$ y $z$, y
+descartando aquellos ya elegidos, aunque se pierde eficiencia por los
+sorteos repetidos. Otra forma más eficiente es elegir primero de
+forma uniforme un número de $1$ a $z$, y eliminar esta zona de $Z$; el
+segundo sorteo hacerlo entre $1$ y $z ??? 1$; el tercero entre $1$ y $z ??? 2$, y así
+sucesivamente, donde en cada etapa solo se elige entre las zonas que
+todavía no fueron sorteadas.
+
+
+##Parte B
+
+Sea el siguiente caso: $z = 15$ zonas, $e = 8$ especies, $p_{ij} = 1$
+para PONER MATRIZ
+
+Usando el programa anterior, y empleando 1000 replicaciones de Monte
+Carlo, estimar los valores de NC(M) para $M = 5$ y para $M = 6$ con
+intervalos de confianza de nivel 95%.
+
+```{r pressure, echo=FALSE}
+
+```
