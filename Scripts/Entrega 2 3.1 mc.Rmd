@@ -1,0 +1,340 @@
+---
+title: 'Sesion 2: Ejercicio 3.1'
+author: "Augusto Souto-Perez"
+date: "Miercoles 27 de Marzo"
+output:
+  pdf_document:
+    toc: yes
+    fig_caption: yes
+  html_document:
+    df_print: paged
+    toc: yes
+  word_document:
+    toc: yes
+keep_tex: yes
+lang: es
+geometry: margin=2cm
+fontsize: 10pt
+urlcolor: blue
+numbersections: yes 
+header-includes: 
+  - \usepackage{tikz}
+  - \usepackage{pgfplots}
+  - \usepackage{pgf}
+  - \usepackage{float}
+---
+
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  results="hide",
+	message = FALSE,
+	warning = FALSE,
+	error=FALSE,
+	fig.pos="H",
+	options(xtable.comment = FALSE)
+)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Descripción del Ejercicio
+
+Problema: se desea estimar el volumen de una región R de $[0, 1]^6$ definida por todos los puntos de la hiper-esfera de centro (0.4, 0.45, 0.55, 0.6, 0.5, 0.4) y radio 0.4, que además cumplan las restricciones siguientes:
+
++ $5x1 + 10x2 \le  4$
++ $x3 + x4 \le  1$
++ $2x1-3x2 + x5 + x6 \ge 0$
+
+# Ejercicio 3.1 (individual)
+
+* Parte a: implementar un programa que reciba como parámetro la
+cantidad de replicaciones n a realizar, y emplee Monte Carlo para
+calcular (e imprimir) la estimación del volumen de R, y la desviación
+estandar de este estimador. Incluir código para calcular el tiempo de
+cálculo empleado por el programa. Utilizar el programa con $n =10^{4}$ y
+luego con $n = 10^{6}$ para estimar el volumen de R. Discutir si los dos valores obtenidos parecen consistentes.
+
+* Parte b: como forma de validar el programa, eliminar las restricciones adicionales de desigualdad, y comparar el volumen calculado por Monte Carlo con $n = 10^{6}$ con el valor exacto del volumen de una hiperesfera de dimensión 6, $\frac{ \pi^3 r^6}{6}$ [ver link](http://www.sjsu.edu/faculty/watkins/ndim.htm). Discutir también la relación de este valor con el obtenido en la parte a.
+
+
+Comentario: la hiperesfera de dimensióon $k$, centro $(c_{1}, \dots ,c_{k})$ y radio r es
+el conjunto de puntos que verifican
+
+$$\sum_{i = 1}^{k} (x_{i}-c_{i})^2 \leq r^{2} $$
+
+
+
+# Pseudocodigo
+
+La simulación sigue la siguiente estrategia
+
+```{r, eval=FALSE}
+
+##PSEUDOCODIGO##
+
+#PARTE A#
+
+initialize vector numero_corridas<-(10^4, 10^6)
+
+initialize vectors volumen, varianza and desvio with length equal to length(numero_corridas)
+
+for k in  1: length(numero_corridas)
+    define n equal to numero_corridas[k]
+
+    initialize vector centro equal to (0.4,0.45,0.55, 0.6, 0.5, 0.4)
+    intitialize vector S with length equal to n
+    initialize float radio
+    initialize s_acumulada
+    initialize matrix puntos with n vectors (columns) of length 6
+    
+    
+    
+     for i in 1:n
+      if sum((puntos[,i]-centro)^2)<=radio^2  &&
+      5*puntos[1,i]+10*puntos[2,i]<=4 && 
+      puntos[3,i]+puntos[4,i]<=1 &&
+      2*puntos[3,i]-3*puntos[2,i]+puntos[5,i]+puntos[6,i]>=0
+       
+      then S[i]=1 else S[i]=0
+       
+      s_acumulada<- sum all S[i]
+     
+     end
+
+    volumen[k]<-s_acumulada/n
+    varianza[k]<-volumen[k]*(1-volumen[k])/n
+    desvio[k]<-varianza[k]^(1/2)
+  
+end
+      
+    
+
+    
+##PSEUDOCODIGO PARTE  B##
+
+initialize vector numero_corridas<-(10^4, 10^6)
+
+initialize vectors volumen, varianza and desvio with length equal to length(numero_corridas)
+
+for k in  1: length(numero_corridas)
+    define n equal to numero_corridas[k]
+
+    initialize vector centro equal to (0.4,0.45,0.55, 0.6, 0.5, 0.4)
+    intitialize vector S with length equal to n
+    initialize float radio
+    initialize s_acumulada
+    initialize matrix puntos with n vectors (columns) of length 6
+    
+    
+    
+     for i in 1:n
+      if sum((puntos[,i]-centro)^2)<=radio^2
+       
+      then S[i]=1 else S[i]=0
+       
+      s_acumulada<- sum all S[i]
+     
+     end
+
+    volumen[k]<-s_acumulada/n
+    varianza[k]<-volumen[k]*(1-volumen[k])/n
+    desvio[k]<-varianza[k]^(1/2)
+  
+end
+
+
+```
+
+
+# Script
+En esta seccion se adjunta el codigo implementado para aplicar la idea del anterior pseudocodigo. Para esto, se aplico el lenguaje R y dos librerias adicionales a las estandar que son "magrittr" y "kableExtra". La primer libreria es utilizada para aplicar el operador "%>%" y la segunda para  imprimir la tabla de resultados en la consola.
+
+Los resultados son replicables siempre que los numeros pseudoaleatorios usen la semilla 10.
+
+
+```{r}
+####PARTE A DEL EJERCICIO###
+rm(list=ls())
+if (!require('magrittr')) install.packages('magrittr')
+if (!require('kableExtra')) install.packages('kableExtra')
+#PARTE A DEL EJERCICIO 3.1
+numero_corridas<-c(10^4,10^6)
+
+
+
+volumen_estimado <-vector("numeric", length(numero_corridas))
+var_estimada  <-vector("numeric", length(numero_corridas))
+desvio        <-vector("numeric", length(numero_corridas))
+inicio        <-vector("numeric", length(numero_corridas))
+fin           <-vector("numeric", length(numero_corridas))
+tiempo_corrida<-vector("numeric", length(numero_corridas))
+
+for (k in 1:length(numero_corridas)) {
+
+inicio[k]     <-Sys.time()  
+
+n<-numero_corridas[k]
+
+set.seed(10)
+
+puntos<-replicate(n, runif(6,0,1), simplify=T)  
+
+centro<-c(0.4,0.45,0.55, 0.6, 0.5, 0.4) %>% as.vector()
+radio<-0.4
+
+S<-vector("numeric", n)
+
+#FUNCION INDICATRIZ#
+#DEVUELVE 1 SI EL PUNTO PERTENECE A LA REGION DE INTERES, 0 SI NO#
+
+for(i in 1:n){
+  
+ if( sum((puntos[,i]-centro)^2)<=radio^2  &&
+      5*puntos[1,i]+10*puntos[2,i]<=4 && 
+      puntos[3,i]+puntos[4,i]<=1 &&
+      2*puntos[3,i]-3*puntos[2,i]+puntos[5,i]+puntos[6,i]>=0
+       )
+   {S[i]=1}else{S[i]=0}
+}  
+
+s_ac<-vector("numeric",n)
+  
+for(i in 2:n){
+  s_ac[1]<-S[1]  
+  s_ac[i]<-s_ac[i-1]+S[i]
+}
+
+volumen_estimado[k]<-s_ac[n]/n
+
+var_estimada[k]<-(volumen_estimado[k]*(1-volumen_estimado[k]))/n
+
+desvio[k]<-var_estimada[k]^(1/2)
+
+
+fin[k]<-Sys.time()
+
+tiempo_corrida[k]<-fin[k]-inicio[k]
+
+}
+
+
+tabla_A<-rbind(volumen_estimado,
+             var_estimada, 
+             desvio,  
+             tiempo_corrida)
+
+colnames(tabla_A)<-c("10^4", "10^6")
+
+rownames(tabla_A)<-c("volumen" , "varianza", 
+                   "desvio", "tiempo")
+
+####PARTE B DEL EJERCICIO###
+
+volumen_verdadero<-(pi^3)*(radio^6)/6
+numero_corridas<-c(10^4,10^6)
+
+volumen_est_hipesf<-vector("numeric", length(numero_corridas))
+var_est_hipesf    <-vector("numeric", length(numero_corridas))
+desvio_hipesf     <-vector("numeric", length(numero_corridas))
+inicio            <-vector("numeric", length(numero_corridas))
+fin               <-vector("numeric", length(numero_corridas))
+tiempo_corrida    <-vector("numeric", length(numero_corridas))
+diferencia        <-vector("numeric", length(numero_corridas))
+for (k in 1:length(numero_corridas)) {
+  
+  inicio[k]<-Sys.time()  
+  
+  n<-numero_corridas[k]
+  
+  set.seed(10)
+  
+  puntos<-replicate(n, runif(6,0,1), simplify=T)  
+  
+  centro<-c(0.4,0.45,0.55, 0.6, 0.5, 0.4) %>% as.vector()
+  radio<-0.4
+  
+  S<-vector("numeric", n)
+  
+  #FUNCION INDICATRIZ#
+  #DEVUELVE 1 SI EL PUNTO PERTENECE A LA REGION DE INTERES, 0 SI NO#
+  
+  for(i in 1:n){
+          if( sum((puntos[,i]-centro)^2)<=radio^2){S[i]=1}else{S[i]=0}
+               }  
+  
+  
+  s_ac<-vector("numeric",n)
+  
+  for(i in 2:n){
+    s_ac[1]<-S[1]  
+    s_ac[i]<-s_ac[i-1]+S[i]
+  }
+  
+  volumen_est_hipesf[k]<-s_ac[n]/n
+  
+  var_est_hipesf[k]<-(volumen_est_hipesf[k]*(1-volumen_est_hipesf[k]))/n
+  
+  desvio_hipesf[k]<-var_est_hipesf[k]^(1/2)
+  
+  
+  fin[k]<-Sys.time()
+  
+  tiempo_corrida[k]<-fin[k]-inicio[k]
+  
+  diferencia[k]<-abs(volumen_est_hipesf[k]-volumen_verdadero)
+}
+
+
+formatC(volumen_est_hipesf, format = "e", digits = 2)
+formatC(var_est_hipesf, format = "e", digits = 2)
+formatC(desvio_hipesf, format = "e", digits = 2)
+formatC(tiempo_corrida, format = "e", digits = 2)
+
+tabla_B<-rbind(volumen_est_hipesf,
+               var_est_hipesf, 
+               desvio_hipesf,  
+               tiempo_corrida)
+
+
+colnames(tabla_B)<-c("10^4", "10^6")
+
+rownames(tabla_B)<-c("volumen" , "varianza", 
+                   "desvio", "tiempo")
+
+
+```
+
+# Resultados del Ejercicio
+A continuacion se adjunta una tabla con los valores de las estimaciones del volumen, varianza y desvio. Cada columna indica el numero de puntos simulados, que son $10^{4}$ y $10^{4}$ respectivamente.
+
+También se incluye el tiempo de corrida de para cada numero de puntos. Cabe aclarar que el tiempo de corrida está medido en segundos.
+
+El equipo empleado para el ejercicio cuenta con un procesador intel core i 3, de 2.53 GHz y 4 gb de memoria.
+
+
+##Parte A
+
+```{r, tablaA, echo=TRUE, fig.pos="H" ,results="markup"}
+kableExtra::kable(tabla_A %>% as.table(), digits = 15)
+```
+
+##Parte B
+
+
+```{r, tablaB, echo=TRUE, fig.pos="H" ,results="markup"}
+kableExtra::kable(tabla_B %>% as.table(), digits = 15)
+```
+
+# Discusión
+
+## Parte A
+Como Se observa, el volumen estimado cuando se simulan $10^{4}$ puntos es 
+$2,00e^{-4}$ mientras que con $10^{6}$ puntos el valor estimado aumenta levemente hasta $2,55e^{-4}$. 
+
+A su vez, la segunda estimación resulta más confiable, ya que la varianza del estimador se reduce con la cantidad de puntos simulados. La varianza del caso  $10^{4}$ es $1,9996e^{-8}$ (Desvio $1,414072e^{-4}$) y la del caso $10^{6}$ es $2,54935e^{10}$ (Desvio $1,596668e^{-5}$).
+
+## Parte B
+La diferencia entre la mejor estimación de la hiperesfera, es decir, aquella hecha con $10^{6}$ puntos simulados, difiere por 0,000135 del valor real de la esfera, calculado mediante la formula de la letra del ejercicio. Esto sugiere que para estimar el volumen de la 6-esfera, una estrategia de simulacion por monte carlo que tenga un millon de simulaciones puede acercarce mucho al valor real del tal volumen. 
+
+A su vez, teniendo en cuenta la parte A del ejercicio, podemos decir que el volumen estimado en la parte B será mayor siempre. Esto es así ya que en la parte A solo se estima el volumen de una parte de la hiperesfera contenida en la hiperesfera estimada en la parte B. Matemáticamente, esto se expresa en el hecho de que en la parte A existen restricciones adicionales (respecto a la parte B) sobre el volumen a estimar.  
